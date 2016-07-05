@@ -8,7 +8,11 @@ module RecordStore
       end
 
       def defined
-        @defined ||= yaml_files.inject({}) { |zones, file| zones.merge(load_yaml_file(file)) }
+        @defined ||= begin
+          zones = {}
+          yaml_files.each { |file| zones.merge!(load_yaml_file(file)) }
+          zones
+        end
       end
 
       def [](name)
@@ -56,6 +60,16 @@ module RecordStore
     validate :validate_provider_can_handle_zone_records
 
     def self.from_yaml_definition(name, definition)
+      definition['records'] ||= []
+      Dir["#{RecordStore.zones_path}/#{name}/*__*.yml"].each do |record_file|
+        fqdn, type = File.basename(record_file, '.yml').split('__')
+        records_definition = Array.wrap(YAML.load_file(record_file))
+        records_definition.each do |record_definition|
+          record_definition[:fqdn] = fqdn
+          record_definition[:type] = type
+        end
+        definition['records'] += records_definition
+      end
       new(name, definition.deep_symbolize_keys)
     end
 

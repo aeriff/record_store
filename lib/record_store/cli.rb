@@ -96,7 +96,7 @@ module RecordStore
     def download
       name = options.fetch('name')
       abort 'Please omit the period at the end of the zone' if name.ends_with?('.')
-      abort 'Zone with this name already exists in zones/' if File.exists?("#{RecordStore.zones_path}/#{name}.yml")
+      abort 'Zone with this name already exists in zones/' if Zone.find(name)
 
       provider = options.fetch('provider', Provider.provider_for(name))
       if provider.nil?

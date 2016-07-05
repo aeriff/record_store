@@ -8,6 +8,23 @@ class ZoneTest < Minitest::Test
     assert_predicate zone, :valid?
   end
 
+  def test_find_returns_zone_by_name_in_single_file
+    zone = Zone.find('zone-file.com')
+
+    assert_equal Zone, zone.class
+    assert_predicate zone, :valid?
+  end
+
+  def test_find_can_load_multiple_records_for_a_single_type
+    zone = Zone.find('two-records.com')
+    assert_equal 2, zone.records.size
+  end
+
+  def test_find_merges_records_from_dir_files
+    zone = Zone.find('merged-records.com')
+    assert_equal 2, zone.records.size
+  end
+
   def test_find_returns_nil_for_missing_zone
     assert_nil Zone.find('missing-zone.com')
   end
