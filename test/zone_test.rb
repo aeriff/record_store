@@ -228,14 +228,14 @@ class ZoneTest < Minitest::Test
     assert_equal 1, Zone.filter_records(records, [{cname: 'real.example.com.' }]).length
   end
 
-  def test_download_downloads_zone_into_file
+  def test_download_downloads_zone_into_dir
     original_zones_path = RecordStore.zones_path
-    RecordStore.zones_path = Dir.tmpdir
+    RecordStore.zones_path = Dir.mktmpdir
 
     name = 'dns-test.shopify.io'
     VCR.use_cassette 'dynect_retrieve_current_records' do
       Zone.download(name, 'DynECT')
-      assert File.exists?("#{RecordStore.zones_path}/#{name}.yml")
+      assert Dir.exist?("#{RecordStore.zones_path}/#{name}")
 
       zone = Zone.find(name)
       assert_equal [{type: 'NS', fqdn: "#{name}."}], zone.config.ignore_patterns
@@ -250,6 +250,7 @@ class ZoneTest < Minitest::Test
       ], zone.records
     end
   ensure
+    FileUtils.remove_entry(RecordStore.zones_path)
     RecordStore.zones_path = original_zones_path
   end
 

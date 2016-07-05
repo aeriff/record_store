@@ -75,17 +75,11 @@ module RecordStore
 
     def self.download(name, provider_name)
       dns = new(name, config: {provider: provider_name}).provider
-      current_records = dns.retrieve_current_records
-
-      File.write("#{RecordStore.zones_path}/#{name}.yml", {
-        name => {
-          config: {
-            provider: provider_name,
-            ignore_patterns: [{type: "NS", fqdn: "#{name}."}],
-          },
-          records: current_records.map(&:to_hash).sort_by! {|r| [r.fetch(:fqdn), r.fetch(:type), r[:nsdname] || r[:address]]}
-        }
-      }.deep_stringify_keys.to_yaml.gsub("---\n", ''))
+      current_records = dns.retrieve_current_records.map(&:to_hash)
+      write(name, records: current_records, config: {
+        provider: provider_name,
+        ignore_patterns: [{type: "NS", fqdn: "#{name}."}],
+      })
     end
 
     def self.write(name, config:, records:)
