@@ -111,6 +111,21 @@ module RecordStore
       puts "Records have been downloaded & can be found in zones/#{name}.yml"
     end
 
+    option :name, desc: 'Zone to lint', aliases: '-n', type: :string, required: false
+    desc 'lint', 'Sorts and re-outputs the zone (or all zones) as directory'
+    def lint
+      name = options['name']
+      zones = if name
+        [Zone.find(name)]
+      else
+        Zone.all
+      end
+      zones.each do |zone|
+        puts "Writing #{zone.name}"
+        zone.write
+      end
+    end
+
     option :name, desc: 'Zone to sort', aliases: '-n', type: :string, required: true
     desc 'sort', 'Sorts the zonefile alphabetically e.g. record-store sort --name=shopify.io'
     def sort

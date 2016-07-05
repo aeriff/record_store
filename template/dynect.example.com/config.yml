@@ -1,0 +1,4 @@
+provider: DynECT
+ignore_patterns:
+- type: NS
+  fqdn: dynect.example.com.
