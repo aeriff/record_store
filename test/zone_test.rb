@@ -268,6 +268,18 @@ class ZoneTest < Minitest::Test
     refute_predicate zone, :unchanged?
   end
 
+  def test_zone_write_removes_other_files_in_dir
+    removed_record = "#{RecordStore.zones_path}/one-record.com/removed-record.one-record.com.yml"
+    FileUtils.touch(removed_record)
+    assert File.exist?(removed_record)
+
+    Zone.find('one-record.com').write
+
+    refute File.exist?(removed_record)
+  ensure
+    FileUtils.remove_entry(removed_record, true)
+  end
+
   private
 
   def mock_provider(records = [])

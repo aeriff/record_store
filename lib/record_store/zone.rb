@@ -88,6 +88,29 @@ module RecordStore
       }.deep_stringify_keys.to_yaml.gsub("---\n", ''))
     end
 
+    def self.write(name, config:, records:)
+      name = name.remove(/\.\z/)
+      zone_file = "#{RecordStore.zones_path}/#{name}.yml"
+      dir = "#{RecordStore.zones_path}/#{name}"
+      Dir["#{dir}/*"].each { |file| File.unlink(file) }
+      begin
+        Dir.mkdir(dir)
+      rescue Errno::EEXIST
+      end
+      zone = { name => { config: config } }
+      File.write(zone_file, zone.deep_stringify_keys.to_yaml.gsub("---\n", ''))
+      records.group_by { |record| [record.fetch(:fqdn), record.fetch(:type)] }.each do |(fqdn, type), grouped_records|
+        grouped_records.sort_by! {|record| record[:nsdname] || record[:address] }
+        grouped_records.each do |record|
+          record.delete(:fqdn)
+          record.delete(:type)
+          record.deep_stringify_keys!
+        end
+        grouped_records = grouped_records.first if grouped_records.size == 1
+        File.write("#{dir}/#{fqdn.remove(/\.\z/)}__#{type}.yml", grouped_records.to_yaml.gsub("---\n", ''))
+      end
+    end
+
     def initialize(name, records: [], config: {})
       @name            = Record.ensure_ends_with_dot(name)
       @config          = RecordStore::Zone::Config.new(config)
@@ -118,6 +141,10 @@ module RecordStore
 
     def provider
       Provider.const_get(config.provider).new(zone: name.gsub(/\.\z/, ''))
+    end
+
+    def write
+      self.class.write(name, config: config.to_hash, records: records.map(&:to_hash))
     end
 
     private
